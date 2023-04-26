@@ -139,7 +139,7 @@ pub(crate) const NUM_STATE_SHARDS: usize = 16;
 
 static COMMIT_POOL: Lazy<rayon::ThreadPool> = Lazy::new(|| {
     rayon::ThreadPoolBuilder::new()
-        .num_threads(16)
+        .num_threads(8)
         .thread_name(|index| format!("commit_{}", index))
         .build()
         .unwrap()

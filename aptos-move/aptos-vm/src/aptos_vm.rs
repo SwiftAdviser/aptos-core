@@ -171,7 +171,7 @@ impl AptosVM {
     pub fn get_num_proof_reading_threads() -> usize {
         match NUM_PROOF_READING_THREADS.get() {
             Some(num_threads) => *num_threads,
-            None => 16,
+            None => 8,
         }
     }
 

@@ -46,7 +46,7 @@ pub const STATE_MERKLE_METADATA_DB_NAME: &str = "state_merkle_metadata_db";
 
 static TREE_COMMIT_POOL: Lazy<rayon::ThreadPool> = Lazy::new(|| {
     rayon::ThreadPoolBuilder::new()
-        .num_threads(16)
+        .num_threads(8)
         .thread_name(|index| format!("tree_commit_{}", index))
         .build()
         .unwrap()

@@ -45,7 +45,7 @@ enum CommitRole {
 
 pub static RAYON_EXEC_POOL: Lazy<rayon::ThreadPool> = Lazy::new(|| {
     rayon::ThreadPoolBuilder::new()
-        .num_threads(num_cpus::get() / 2)
+        .num_threads(num_cpus::get() / 4)
         .thread_name(|index| format!("par_exec_{}", index))
         .build()
         .unwrap()

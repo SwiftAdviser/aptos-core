@@ -108,7 +108,7 @@ use std::{
 use thiserror::Error;
 
 const MAX_PARALLELIZABLE_DEPTH: usize = 2;
-const NUM_IO_THREADS: usize = 16;
+const NUM_IO_THREADS: usize = 8;
 
 pub static IO_POOL: Lazy<ThreadPool> = Lazy::new(|| {
     ThreadPoolBuilder::new()
