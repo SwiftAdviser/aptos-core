@@ -76,7 +76,7 @@ impl NativeExecutor {
     pub fn get_concurrency_level() -> usize {
         match NATIVE_EXECUTOR_CONCURRENCY_LEVEL.get() {
             Some(concurrency_level) => *concurrency_level,
-            None => 32,
+            None => 16,
         }
     }
 
