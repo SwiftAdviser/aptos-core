@@ -12,7 +12,9 @@ use aptos_types::{
     account_view::AccountView,
     epoch_state::EpochState,
     state_store::{
-        state_key::StateKey, state_storage_usage::StateStorageUsage, state_value::StateValue,
+        state_key::{StateKey, StateKeyInner},
+        state_storage_usage::StateStorageUsage,
+        state_value::StateValue,
     },
     transaction::Transaction,
     write_set::TransactionWrite,
@@ -60,14 +62,32 @@ impl<'a> AccountView for CoreAccountStateView<'a> {
 /// Helper class for calculating state changes after a block of transactions are executed.
 pub struct InMemoryStateCalculatorV2 {}
 
+pub struct BlockStateUpdates<'a> {
+    pub state_updates_vec: Vec<HashMap<StateKey, Option<StateValue>>>,
+    pub updates: HashMap<&'a StateKey, &'a Option<StateValue>>,
+}
+
+impl<'a> BlockStateUpdates<'a> {
+    pub fn new(state_updates_vec: Vec<HashMap<StateKey, Option<StateValue>>>) -> Self {
+        let mut res = Self {
+            state_updates_vec,
+            // TODO(grao): Shard this HashMap.
+            updates: HashMap::new(),
+        };
+
+        res.updates = res.state_updates_vec.iter().flatten().collect();
+        res
+    }
+}
+
 impl InMemoryStateCalculatorV2 {
-    pub fn calculate_for_transaction_block(
+    pub fn calculate_for_transaction_block<'a>(
         base: &StateDelta,
         state_cache: StateCache,
         to_keep: &[(Transaction, ParsedTransactionOutput)],
         new_epoch: bool,
     ) -> Result<(
-        Vec<HashMap<StateKey, Option<StateValue>>>,
+        BlockStateUpdates<'a>,
         Vec<Option<HashValue>>,
         StateDelta,
         Option<EpochState>,
@@ -112,15 +132,12 @@ impl InMemoryStateCalculatorV2 {
             .collect();
 
         let state_updates_vec = Self::get_state_updates(to_keep);
-
-        // TODO(grao): Shard this HashMap.
-        let updates: HashMap<&StateKey, &Option<StateValue>> =
-            state_updates_vec.iter().flatten().collect();
+        let block_state_updates = BlockStateUpdates::new(state_updates_vec);
 
         let latest_checkpoint = base.current.clone();
         let latest_checkpoint_version = base.current_version;
         let mut usage = latest_checkpoint.usage();
-        for (k, v) in &updates {
+        for (k, v) in &block_state_updates.updates {
             let key_size = k.size();
             if let Some(ref value) = v {
                 usage.add_item(key_size + value.size())
@@ -133,15 +150,22 @@ impl InMemoryStateCalculatorV2 {
         }
 
         let next_epoch_state = if new_epoch {
-            Some(Self::get_epoch_state(&sharded_state_cache, &updates)?)
+            Some(Self::get_epoch_state(
+                &sharded_state_cache,
+                &block_state_updates.updates,
+            )?)
         } else {
             None
         };
 
         let new_checkpoint_version =
             Some(latest_checkpoint_version.map_or(0, |v| v + 1) + num_txns as u64 - 1);
-        let new_checkpoint =
-            Self::make_checkpoint(latest_checkpoint, updates, usage, ProofReader::new(proofs))?;
+        let new_checkpoint = Self::make_checkpoint(
+            latest_checkpoint,
+            &block_state_updates.updates,
+            usage,
+            ProofReader::new(proofs),
+        )?;
         let state_checkpoint_hashes = std::iter::repeat(None)
             .take(num_txns - 1)
             .chain([Some(new_checkpoint.root_hash())])
@@ -156,7 +180,7 @@ impl InMemoryStateCalculatorV2 {
         );
 
         Ok((
-            state_updates_vec,
+            block_state_updates,
             state_checkpoint_hashes,
             result_state,
             next_epoch_state,
@@ -191,7 +215,7 @@ impl InMemoryStateCalculatorV2 {
 
     fn make_checkpoint(
         latest_checkpoint: SparseMerkleTree<StateValue>,
-        updates: HashMap<&StateKey, &Option<StateValue>>,
+        updates: &HashMap<&StateKey, &Option<StateValue>>,
         usage: StateStorageUsage,
         proof_reader: ProofReader,
     ) -> Result<SparseMerkleTree<StateValue>> {

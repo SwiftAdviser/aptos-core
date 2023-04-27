@@ -1011,6 +1011,64 @@ impl AptosDB {
         self.ledger_db.write_schemas(ledger_batch)
     }
 
+    /// Same as save_transactions, but only for whole blocks.
+    fn save_transaction_blocks(
+        &self,
+        txns_to_commit: &[TransactionToCommit],
+        first_version: Version,
+        base_state_version: Option<Version>,
+        ledger_info_with_sigs: Option<&LedgerInfoWithSignatures>,
+        sync_commit: bool,
+        // TODO(grao): Consider remove this.
+        latest_in_memory_state: StateDelta,
+        block_state_updates: HashMap<StateKey, Option<StateValue>>,
+    ) -> Result<()> {
+        gauged_api("save_transaction_blocks", || {
+            // Executing and committing from more than one threads not allowed -- consensus and
+            // state sync must hand over to each other after all pending execution and committing
+            // complete.
+            let _lock = self
+                .ledger_commit_lock
+                .try_lock()
+                .expect("Concurrent committing detected.");
+
+            self.save_transactions_validation(
+                txns_to_commit,
+                first_version,
+                base_state_version,
+                ledger_info_with_sigs,
+                &latest_in_memory_state,
+            )?;
+
+            let (ledger_batch, sharded_state_kv_batches, new_root_hash) = self
+                .save_transactions_impl(
+                    txns_to_commit,
+                    first_version,
+                    latest_in_memory_state.current.usage(),
+                )?;
+
+            {
+                let mut buffered_state = self.state_store.buffered_state().lock();
+                let last_version = first_version + txns_to_commit.len() as u64 - 1;
+                self.commit_ledger_and_state_kv_db(
+                    last_version,
+                    ledger_batch,
+                    sharded_state_kv_batches,
+                    new_root_hash,
+                    ledger_info_with_sigs,
+                )?;
+
+                buffered_state.update(
+                    Some(block_state_updates),
+                    latest_in_memory_state,
+                    sync_commit || txns_to_commit.last().unwrap().is_reconfig(),
+                )?;
+            }
+
+            self.post_commit(txns_to_commit, first_version, ledger_info_with_sigs)
+        })
+    }
+
     fn maybe_commit_state_merkle_db(
         &self,
         buffered_state: &mut BufferedState,
