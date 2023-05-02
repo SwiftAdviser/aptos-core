@@ -8,6 +8,7 @@ module token_objects::hero {
 
     use aptos_token_objects::collection;
     use aptos_token_objects::token;
+    use aptos_std::string_utils;
 
     const ENOT_A_HERO: u64 = 1;
     const ENOT_A_WEAPON: u64 = 2;
@@ -210,16 +211,55 @@ module token_objects::hero {
         name: String,
         description: String,
     ) acquires Hero {
-        let token_address = token::create_token_address(
+        let (hero_obj, hero) = get_hero(
             &signer::address_of(creator),
             &collection,
             &name,
         );
-        let hero_obj = object::address_to_object<Hero>(token_address);
-        let hero = borrow_global<Hero>(token_address);
         let creator_addr = token::creator(hero_obj);
         assert!(creator_addr == signer::address_of(creator), error::permission_denied(ENOT_CREATOR));
         token::set_description(&hero.mutator_ref, description);
+    }
+
+    // View functions
+    #[view]
+    fun view_hero(creator: address, collection: String, name: String): (String, String) acquires Hero {
+        let (_, hero) = get_hero(
+           &creator,
+            &collection,
+            &name,
+        );
+        (hero.gender, hero.race)
+    }
+
+    #[view]
+    fun view_hero_by_object(hero_obj: Object<Hero>): (String, String) acquires Hero{
+        let token_address = object::object_address(&hero_obj);
+        let hero = borrow_global<Hero>(token_address);
+        (hero.gender, hero.race)
+    }
+
+    #[view]
+    fun view_object<T: key>(obj: Object<T>): (String, String) acquires Hero, Armor {
+        let token_address = object::object_address(&obj);
+        if (exists<Hero>(token_address)) {
+            let hero = borrow_global<Hero>(token_address);
+            (hero.gender, hero.race)
+        } else if (exists<Armor>(token_address)) {
+            let armor = borrow_global<Armor>(token_address);
+            (string_utils::debug_string(&armor.defense), string_utils::debug_string(&armor.weight))
+        } else {
+            abort 22
+        }
+    }
+
+    inline fun get_hero(creator: &address, collection: &String, name: &String): (Object<Hero>, &Hero) {
+        let token_address = token::create_token_address(
+            creator,
+            collection,
+            name,
+        );
+        (object::address_to_object<Hero>(token_address), borrow_global<Hero>(token_address))
     }
 
     #[test(account = @0x3)]
