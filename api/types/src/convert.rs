@@ -17,7 +17,7 @@ use crate::{
     UserTransactionRequest, VersionedEvent, WriteSet, WriteSetChange, WriteSetPayload,
 };
 use anyhow::{bail, ensure, format_err, Context as AnyhowContext, Result};
-use aptos_crypto::{hash::CryptoHash, HashValue};
+use aptos_crypto::{hash::CryptoHash, HashValue, _once_cell::sync::Lazy};
 use aptos_storage_interface::DbReader;
 use aptos_types::{
     access_path::{AccessPath, Path},
@@ -37,6 +37,7 @@ use aptos_types::{
 use aptos_vm::move_vm_ext::MoveResolverExt;
 use move_binary_format::file_format::FunctionHandleIndex;
 use move_core_types::{
+    account_address::AccountAddress,
     identifier::Identifier,
     language_storage::{ModuleId, StructTag, TypeTag},
     value::{MoveStructLayout, MoveTypeLayout},
@@ -47,8 +48,12 @@ use std::{
     convert::{TryFrom, TryInto},
     iter::IntoIterator,
     rc::Rc,
+    str::FromStr,
     sync::Arc,
 };
+
+static OBJECT_MODULE: Lazy<Identifier> = Lazy::new(|| Identifier::from_str("object").unwrap());
+static OBJECT_STRUCT: Lazy<Identifier> = Lazy::new(|| Identifier::from_str("Object").unwrap());
 
 /// The Move converter for converting Move types to JSON
 ///
@@ -754,7 +759,22 @@ impl<'a, R: MoveResolverExt + ?Sized> MoveConverter<'a, R> {
         type_tag: &TypeTag,
         val: Value,
     ) -> Result<move_core_types::value::MoveValue> {
-        let layout = self.inner.get_type_layout_with_types(type_tag)?;
+        let layout = match type_tag {
+            TypeTag::Struct(boxed_struct) => {
+                // This has to be checked at this level, otherwise it goes into the Move language
+                if boxed_struct.address == AccountAddress::ONE
+                    && boxed_struct.module == *OBJECT_MODULE
+                    && boxed_struct.name == *OBJECT_STRUCT
+                {
+                    // Objects are just laid out as an address
+                    MoveTypeLayout::Address
+                } else {
+                    // For all other structs, use their set layout
+                    self.inner.get_type_layout_with_types(type_tag)?
+                }
+            },
+            _ => self.inner.get_type_layout_with_types(type_tag)?,
+        };
 
         self.try_into_vm_value_from_layout(&layout, val)
     }
