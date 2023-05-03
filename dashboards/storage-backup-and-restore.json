@@ -16,7 +16,20 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": true,
+      "title": "aptos-core",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
@@ -50,9 +63,10 @@
         "minVizWidth": 0,
         "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showUnfilled": true
+        "showUnfilled": true,
+        "valueMode": "color"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.0-cloud.5.a016665c",
       "repeatDirection": "h",
       "targets": [
         {
@@ -98,9 +112,10 @@
         "minVizWidth": 0,
         "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showUnfilled": true
+        "showUnfilled": true,
+        "valueMode": "color"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.0-cloud.5.a016665c",
       "repeatDirection": "h",
       "targets": [
         {
@@ -229,9 +244,10 @@
         "minVizWidth": 0,
         "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showUnfilled": true
+        "showUnfilled": true,
+        "valueMode": "color"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.0-cloud.5.a016665c",
       "repeatDirection": "h",
       "targets": [
         {
@@ -362,7 +378,7 @@
       "nullPointMode": "null",
       "options": { "alertThreshold": true },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.0-cloud.5.a016665c",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -415,9 +431,10 @@
         "minVizWidth": 0,
         "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showUnfilled": true
+        "showUnfilled": true,
+        "valueMode": "color"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.0-cloud.5.a016665c",
       "repeatDirection": "h",
       "targets": [
         {
@@ -548,7 +565,7 @@
       "nullPointMode": "null",
       "options": { "alertThreshold": true },
       "percentage": false,
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.0-cloud.5.a016665c",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -672,7 +689,7 @@
           "color": { "mode": "continuous-RdYlGr" },
           "links": [],
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green" }] },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
           "unit": "none"
         },
         "overrides": []
@@ -685,9 +702,10 @@
         "minVizWidth": 0,
         "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showUnfilled": true
+        "showUnfilled": true,
+        "valueMode": "color"
       },
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.5.0-cloud.5.a016665c",
       "repeatDirection": "h",
       "targets": [
         {
@@ -738,7 +756,7 @@
       "nullPointMode": "null",
       "options": { "alertThreshold": true },
       "percentage": false,
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.5.0-cloud.5.a016665c",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -795,7 +813,7 @@
       "nullPointMode": "null",
       "options": { "alertThreshold": true },
       "percentage": false,
-      "pluginVersion": "9.1.1",
+      "pluginVersion": "9.5.0-cloud.5.a016665c",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2284,7 +2302,7 @@
         "name": "role",
         "options": [
           { "selected": false, "text": "All", "value": "$__all" },
-          { "selected": true, "text": "fullnode", "value": "fullnode" },
+          { "selected": false, "text": "fullnode", "value": "fullnode" },
           { "selected": false, "text": "validator_fullnode", "value": "validator_fullnode" }
         ],
         "query": "fullnode, validator_fullnode",
@@ -2321,6 +2339,6 @@
   "timezone": "",
   "title": "storage-backup-and-restore",
   "uid": "9oXpx4n4z",
-  "version": 4,
+  "version": 6,
   "weekStart": ""
 }
